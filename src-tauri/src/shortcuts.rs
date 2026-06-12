@@ -243,6 +243,10 @@ pub fn run_action(app: &AppHandle, action: ShortcutAction) {
                 inner.broadcast_enabled = !inner.broadcast_enabled;
                 inner.broadcast_enabled
             };
+            // Same rising-edge auto-stack as the set_broadcast_enabled command.
+            if new_enabled {
+                crate::windows::organize::organize(&state.ordered_visible_hwnds());
+            }
             let _ = app_handle.emit(
                 EVT_BROADCAST_STATE,
                 BroadcastStatePayload {

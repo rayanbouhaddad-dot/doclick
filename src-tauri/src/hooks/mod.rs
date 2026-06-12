@@ -14,6 +14,13 @@ use windows::Win32::UI::WindowsAndMessaging::{
 use crate::shortcuts::{MOD_ALT, MOD_CTRL, MOD_META, MOD_SHIFT};
 use crate::state::AppState;
 
+/// Marker stamped into `dwExtraInfo` of every synthetic input doclick sends
+/// (broadcast replays, focus-priming Alt taps, travel keys). The LL hooks
+/// skip events carrying it — without this, the Alt tap that `focus_window`
+/// fires to earn focus-stealing rights is itself caught by the keyboard hook
+/// and re-broadcast, focus-cycling every window on a simple focus shortcut.
+pub(crate) const SELF_INJECTED: usize = 0xD0C11C;
+
 /// Currently held modifiers as a MOD_* bitmask. Shared by both LL hook
 /// callbacks for shortcut matching.
 pub(crate) fn current_modifiers() -> u8 {

@@ -62,8 +62,6 @@ export const setOverlayScale = (scale: OverlayScale) =>
 export const setDispatchSpeed = (speed: DispatchSpeed) =>
   invoke<void>("set_dispatch_speed", { speed });
 
-export const organizeWindows = () => invoke<number>("organize_windows");
-
 export const setShortcuts = (shortcuts: ShortcutBindings) =>
   invoke<void>("set_shortcuts", { shortcuts });
 

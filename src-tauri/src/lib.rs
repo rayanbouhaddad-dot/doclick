@@ -79,7 +79,6 @@ pub fn run() {
             commands::set_orientation,
             commands::set_overlay_scale,
             commands::set_dispatch_speed,
-            commands::organize_windows,
             commands::set_shortcuts,
             commands::focus_character_at_index,
             commands::focus_next_character,

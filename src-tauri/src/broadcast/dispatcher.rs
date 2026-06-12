@@ -339,7 +339,7 @@ fn mouse_input(
                 mouseData: 0,
                 dwFlags: flags,
                 time: 0,
-                dwExtraInfo: 0,
+                dwExtraInfo: crate::hooks::SELF_INJECTED,
             },
         },
     }
@@ -385,7 +385,7 @@ fn keyboard_input(vk: u16, scan: u16, flags: KEYBD_EVENT_FLAGS) -> INPUT {
                 wScan: scan,
                 dwFlags: flags,
                 time: 0,
-                dwExtraInfo: 0,
+                dwExtraInfo: crate::hooks::SELF_INJECTED,
             },
         },
     }

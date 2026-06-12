@@ -47,7 +47,9 @@ pub unsafe extern "system" fn ll_mouse_proc(
 
         // Trigger on UP, not DOWN, so the source window finishes processing
         // DOWN+UP before the dispatcher steals focus to the targets.
-        if msg == WM_LBUTTONUP && !is_dispatching() {
+        let self_injected =
+            (*(l_param.0 as *const MSLLHOOKSTRUCT)).dwExtraInfo == super::SELF_INJECTED;
+        if msg == WM_LBUTTONUP && !is_dispatching() && !self_injected {
             if let Some(app_state) = state() {
                 // Snapshot in a single read-lock so we don't hold the lock
                 // across the Win32 syscalls below. LL hooks have a

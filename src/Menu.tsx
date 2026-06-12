@@ -1,9 +1,9 @@
 import { emit } from "@tauri-apps/api/event";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Layers, Minus, Settings as SettingsIcon, X } from "lucide-react";
+import { Minus, Settings as SettingsIcon, X } from "lucide-react";
 import { useCallback, useEffect } from "react";
-import { openSettings, organizeWindows } from "./ipc/commands";
+import { openSettings } from "./ipc/commands";
 
 /// Standalone Tauri window content for the kebab menu. Rendered in the
 /// dedicated "menu" window (defined in tauri.conf.json), shown by
@@ -35,17 +35,6 @@ export default function Menu() {
     await hide();
   };
 
-  const onOrganize = async () => {
-    // Hide first: the menu is always-on-top and would float over the
-    // freshly arranged Dofus windows.
-    await hide();
-    try {
-      await organizeWindows();
-    } catch (err) {
-      console.warn("organizeWindows failed", err);
-    }
-  };
-
   const onMinimize = async () => {
     const overlay = await WebviewWindow.getByLabel("overlay");
     if (overlay) await overlay.minimize();
@@ -66,11 +55,6 @@ export default function Menu() {
       >
         Paramètres
       </MenuItem>
-      <MenuSeparator />
-      <MenuItem onClick={onOrganize} icon={<Layers className="h-3.5 w-3.5" strokeWidth={2} />}>
-        Organiser les fenêtres
-      </MenuItem>
-      <MenuSeparator />
       <MenuItem onClick={onMinimize} icon={<Minus className="h-3.5 w-3.5" strokeWidth={2} />}>
         Minimiser
       </MenuItem>
@@ -79,10 +63,6 @@ export default function Menu() {
       </MenuItem>
     </div>
   );
-}
-
-function MenuSeparator() {
-  return <div className="mx-2 my-1 h-px bg-border/60" />;
 }
 
 function MenuItem({

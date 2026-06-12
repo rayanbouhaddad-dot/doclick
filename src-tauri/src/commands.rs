@@ -93,7 +93,18 @@ pub fn set_broadcast_enabled(
     state: State<'_, AppState>,
     enabled: bool,
 ) -> Result<(), CmdError> {
-    state.write().broadcast_enabled = enabled;
+    let turned_on = {
+        let mut inner = state.write();
+        let was = inner.broadcast_enabled;
+        inner.broadcast_enabled = enabled;
+        enabled && !was
+    };
+    // Stacked windows are the supported broadcast geometry — organize on
+    // every rising edge so the user never broadcasts across a scattered
+    // layout.
+    if turned_on {
+        crate::windows::organize::organize(&state.ordered_visible_hwnds());
+    }
     emit_broadcast_state(&app, enabled, BroadcastReason::User);
     Ok(())
 }
@@ -318,14 +329,6 @@ pub fn set_dispatch_speed(
     persist(&app, &state)?;
     emit_prefs_changed(&app);
     Ok(())
-}
-
-/// Stack every tracked Dofus window on the monitor hosting the first one.
-/// Returns how many windows were moved.
-#[tauri::command]
-pub fn organize_windows(state: State<'_, AppState>) -> Result<usize, CmdError> {
-    let hwnds = state.ordered_visible_hwnds();
-    Ok(crate::windows::organize::organize(&hwnds))
 }
 
 #[tauri::command]

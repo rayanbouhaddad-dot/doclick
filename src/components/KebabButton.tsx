@@ -8,8 +8,7 @@ import { useDoclickStore } from "../store/useDoclickStore";
 import type { OverlayScale } from "../types";
 import { Button } from "./ui/button";
 
-/// Must match the "menu" window width in tauri.conf.json.
-const MENU_WIDTH = 168;
+const MENU_WIDTH = 160;
 const MENU_GAP = 4;
 
 /// Kebab is intentionally smaller than the avatar/broadcast to preserve

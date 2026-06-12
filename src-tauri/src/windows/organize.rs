@@ -1,9 +1,10 @@
 //! Window organizer: stack every tracked Dofus window on the same rect.
 //!
-//! All windows land on the full work area (taskbar excluded) of the monitor
-//! hosting the first window in display order. Combined with the focus
-//! shortcuts this gives "one screen, N accounts" flipping, and makes the
-//! proportional click translation exactly 1:1.
+//! Runs automatically whenever broadcast turns on. All windows land on the
+//! full work area (taskbar excluded) of the monitor hosting the first window
+//! in display order. Combined with the focus shortcuts this gives "one
+//! screen, N accounts" flipping, and makes the proportional click
+//! translation exactly 1:1.
 
 use windows::Win32::Foundation::HWND;
 use windows::Win32::Graphics::Gdi::{
@@ -14,19 +15,19 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 
 /// Stack `hwnds` on the work area of the monitor hosting the first one.
-/// Returns how many windows were moved.
-pub fn organize(hwnds: &[isize]) -> usize {
+pub fn organize(hwnds: &[isize]) {
     let Some(&first) = hwnds.first() else {
-        return 0;
+        return;
     };
     let Some((left, top, width, height)) = monitor_work_area(first) else {
-        return 0;
+        return;
     };
 
-    hwnds
+    let moved = hwnds
         .iter()
         .filter(|&&hwnd| place_window(hwnd, left, top, width.max(1), height.max(1)))
-        .count()
+        .count();
+    tracing::debug!(moved, total = hwnds.len(), "organize: windows stacked");
 }
 
 fn place_window(hwnd: isize, x: i32, y: i32, w: i32, h: i32) -> bool {
