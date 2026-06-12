@@ -223,12 +223,25 @@ impl InnerState {
 }
 
 #[derive(Debug, Clone)]
-pub struct AppState(Arc<RwLock<InnerState>>);
+pub struct AppState(Arc<RwLock<InnerState>>, Arc<ConfigReady>);
 
 impl Default for AppState {
     fn default() -> Self {
-        Self(Arc::new(RwLock::new(InnerState::default())))
+        Self(
+            Arc::new(RwLock::new(InnerState::default())),
+            Arc::new(ConfigReady::default()),
+        )
     }
+}
+
+/// One-shot "persisted config is loaded and applied" latch, flipped by
+/// `setup` once. Snapshot reads await it so the webview's first hydrate can
+/// never observe default state — without this the overlay briefly painted at
+/// default size before snapping to the saved one.
+#[derive(Debug, Default)]
+pub struct ConfigReady {
+    flag: std::sync::atomic::AtomicBool,
+    notify: tokio::sync::Notify,
 }
 
 impl AppState {
@@ -238,6 +251,24 @@ impl AppState {
 
     pub fn write(&self) -> parking_lot::RwLockWriteGuard<'_, InnerState> {
         self.0.write()
+    }
+
+    pub fn mark_config_loaded(&self) {
+        self.1
+            .flag
+            .store(true, std::sync::atomic::Ordering::Release);
+        self.1.notify.notify_waiters();
+    }
+
+    /// Resolves once `mark_config_loaded` has run. Immediate afterwards.
+    pub async fn config_loaded(&self) {
+        // Create the notified future before re-checking the flag so a
+        // notify_waiters firing in between cannot be lost.
+        let notified = self.1.notify.notified();
+        if self.1.flag.load(std::sync::atomic::Ordering::Acquire) {
+            return;
+        }
+        notified.await;
     }
 
     /// Resolve every live window against profiles for the React store.

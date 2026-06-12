@@ -168,6 +168,11 @@ pub fn run() {
                 }
             }
 
+            // Unblock get_state_snapshot only now: config is in state, the
+            // initial enumeration ran, and both windows sit at their saved
+            // geometry — the webview's first hydrate can't observe defaults.
+            app_state.mark_config_loaded();
+
             // Hook thread (low-level mouse + keyboard).
             hooks::install(app_state.clone(), handle.clone());
 
@@ -183,11 +188,10 @@ pub fn run() {
             // Background updater check (~30s after startup, throttled to 6h).
             spawn_update_check(handle.clone(), app_state.clone());
 
-            // One-shot re-hydrate ping ~750ms after launch. Covers the Tauri 2
-            // startup race where the webview's very first `get_state_snapshot`
-            // can resolve against partial state (config/window writes happen
-            // synchronously in setup but the listener attaching for the catch-
-            // up emit isn't ready until React mounts post-paint).
+            // One-shot re-hydrate ping ~750ms after launch. The config-loaded
+            // latch already guarantees the first snapshot is complete; this
+            // catches events emitted before React attached its listeners
+            // (windows-changed between hydrate and subscription).
             spawn_boot_rehydrate(handle.clone());
 
             Ok(())

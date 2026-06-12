@@ -81,10 +81,14 @@ pub fn list_windows(state: State<'_, AppState>) -> Vec<WindowEntry> {
     state.snapshot_windows()
 }
 
+/// Async on purpose: awaits the config-loaded latch so the webview's first
+/// hydrate (which can race `setup` on a cold start) never observes default
+/// state and resizes the overlay to wrong dimensions.
 #[tauri::command]
-pub fn get_state_snapshot(state: State<'_, AppState>) -> StateSnapshot {
+pub async fn get_state_snapshot(state: State<'_, AppState>) -> Result<StateSnapshot, CmdError> {
+    state.config_loaded().await;
     let windows = state.snapshot_windows();
-    state.read().to_snapshot(windows)
+    Ok(state.read().to_snapshot(windows))
 }
 
 #[tauri::command]
