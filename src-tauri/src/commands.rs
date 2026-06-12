@@ -320,15 +320,12 @@ pub fn set_dispatch_speed(
     Ok(())
 }
 
-/// Tile or stack every tracked Dofus window on the monitor hosting the
-/// first one. Returns how many windows were moved.
+/// Stack every tracked Dofus window on the monitor hosting the first one.
+/// Returns how many windows were moved.
 #[tauri::command]
-pub fn organize_windows(
-    state: State<'_, AppState>,
-    layout: crate::windows::organize::Layout,
-) -> Result<usize, CmdError> {
+pub fn organize_windows(state: State<'_, AppState>) -> Result<usize, CmdError> {
     let hwnds = state.ordered_visible_hwnds();
-    Ok(crate::windows::organize::organize(&hwnds, layout))
+    Ok(crate::windows::organize::organize(&hwnds))
 }
 
 #[tauri::command]

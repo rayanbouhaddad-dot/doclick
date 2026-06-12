@@ -5,10 +5,7 @@ export type Orientation = "horizontal" | "vertical";
 export type OverlayScale = "small" | "medium" | "large";
 
 /// Pacing preset for the broadcast dispatcher (see DispatchSpeed in Rust).
-export type DispatchSpeed = "turbo" | "normal" | "safe";
-
-/// Layouts understood by the organize_windows command.
-export type OrganizeLayout = "grid" | "stack";
+export type DispatchSpeed = "normal" | "safe";
 
 export type SettingsTabId = "global" | "characters" | "shortcuts" | "about";
 

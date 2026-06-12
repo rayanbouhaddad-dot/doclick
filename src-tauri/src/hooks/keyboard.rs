@@ -1,7 +1,4 @@
 use windows::Win32::Foundation::{LPARAM, LRESULT, WPARAM};
-use windows::Win32::UI::Input::KeyboardAndMouse::{
-    GetAsyncKeyState, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN,
-};
 use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, HC_ACTION, KBDLLHOOKSTRUCT, WM_KEYDOWN, WM_SYSKEYDOWN,
 };
@@ -10,9 +7,10 @@ use crate::broadcast::{
     dispatcher::{is_dispatching, try_enqueue},
     BroadcastJob,
 };
+use crate::shortcuts::{self, MOD_ALT, MOD_CTRL, MOD_META};
 use crate::windows::focus::current_foreground;
 
-use super::state;
+use super::{current_modifiers, state};
 
 pub unsafe extern "system" fn ll_kbd_proc(
     n_code: i32,
@@ -35,10 +33,14 @@ pub unsafe extern "system" fn ll_kbd_proc(
                 };
                 // Modifier combos (Ctrl/Alt/Win+X) keep their app-local meaning —
                 // broadcasting Ctrl+C would replicate "copy" across every window.
-                if !known.is_empty() && !modifiers_held() {
+                let mods = current_modifiers();
+                if !known.is_empty() && mods & (MOD_CTRL | MOD_ALT | MOD_META) == 0 {
                     let vk = (*(l_param.0 as *const KBDLLHOOKSTRUCT)).vkCode;
                     let fg = current_foreground();
-                    if known.contains(&fg) {
+                    // Keys bound to a doclick shortcut (e.g. "F1" = focus
+                    // char 1) keep that meaning — never replay them on the
+                    // followers.
+                    if known.contains(&fg) && !shortcuts::is_reserved_key(mods, vk) {
                         let _ = try_enqueue(BroadcastJob::Key {
                             source_hwnd: fg,
                             vk,
@@ -49,13 +51,4 @@ pub unsafe extern "system" fn ll_kbd_proc(
         }
     }
     CallNextHookEx(None, n_code, w_param, l_param)
-}
-
-fn modifiers_held() -> bool {
-    unsafe {
-        let pressed = |vk: windows::Win32::UI::Input::KeyboardAndMouse::VIRTUAL_KEY| {
-            (GetAsyncKeyState(vk.0 as i32) as u16) & 0x8000 != 0
-        };
-        pressed(VK_CONTROL) || pressed(VK_MENU) || pressed(VK_LWIN) || pressed(VK_RWIN)
-    }
 }

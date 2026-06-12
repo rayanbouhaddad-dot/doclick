@@ -28,8 +28,8 @@ const DRIFT_RECOVERY_TRIES: u32 = 3;
 
 /// Inter-step pacing of one dispatch cycle. Each delay exists because Unity
 /// silently drops input that arrives before the window has settled — see the
-/// field docs. The "normal" preset is the long-standing tuned default; the
-/// other presets scale it for faster machines (turbo) or lossy setups (safe).
+/// field docs. The "normal" preset is the long-standing tuned default; "safe"
+/// scales it up for lossy setups.
 #[derive(Debug, Clone, Copy)]
 struct Timings {
     /// Delay between the user's click and the first follower focus, so the
@@ -57,13 +57,6 @@ struct Timings {
 fn timings_for(speed: DispatchSpeed) -> Timings {
     let ms = Duration::from_millis;
     match speed {
-        DispatchSpeed::Turbo => Timings {
-            pre_dispatch: ms(30),
-            post_focus_settle: ms(15),
-            move_to_down: ms(5),
-            click_down_up: ms(15),
-            post_send_hold: ms(35),
-        },
         DispatchSpeed::Normal => Timings {
             pre_dispatch: ms(80),
             post_focus_settle: ms(30),

@@ -95,14 +95,14 @@ pub enum OverlayScale {
 
 /// How aggressively the dispatcher paces the focus-cycle. The inter-step
 /// delays exist because Unity drops input that arrives before a window has
-/// settled focus; "turbo" shrinks them for fast machines, "safe" grows them
-/// for setups where clicks get lost. Concrete values live next to the
-/// dispatcher (`timings_for`).
+/// settled focus; "safe" grows them for setups where clicks get lost.
+/// Concrete values live next to the dispatcher (`timings_for`).
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum DispatchSpeed {
-    Turbo,
+    /// "turbo" existed briefly on pre-release builds; coerce it silently.
     #[default]
+    #[serde(alias = "turbo")]
     Normal,
     Safe,
 }

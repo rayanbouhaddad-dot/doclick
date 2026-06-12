@@ -96,14 +96,13 @@ export function GlobalTab({ onNavigate }: Props) {
 
       <Row
         label="Vitesse de diffusion"
-        hint="Rapide enchaîne les fenêtres plus vite. Si des clics se perdent, repassez en Normale ou Prudente."
+        hint="Prudente espace davantage les actions — utilisez-la si des clics se perdent sur certains comptes."
       >
         <ToggleGroup
           type="single"
           value={dispatchSpeed}
           onValueChange={(v) => v && setDispatchSpeed(v as DispatchSpeed)}
         >
-          <ToggleGroupItem value="turbo">Rapide</ToggleGroupItem>
           <ToggleGroupItem value="normal">Normale</ToggleGroupItem>
           <ToggleGroupItem value="safe">Prudente</ToggleGroupItem>
         </ToggleGroup>
