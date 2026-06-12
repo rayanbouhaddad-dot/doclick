@@ -61,18 +61,7 @@ pub unsafe extern "system" fn ll_mouse_proc(
                     if !inner.broadcast_enabled {
                         (false, Vec::new())
                     } else {
-                        let known: Vec<isize> = inner
-                            .live_windows
-                            .iter()
-                            .filter(|w| {
-                                inner
-                                    .profiles
-                                    .iter()
-                                    .any(|p| p.matches_window(&w.title, w.pid))
-                            })
-                            .map(|w| w.hwnd)
-                            .collect();
-                        (true, known)
+                        (true, inner.tracked_hwnds())
                     }
                 };
                 if broadcast_on {

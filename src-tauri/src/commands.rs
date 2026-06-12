@@ -15,8 +15,8 @@ use crate::events::{
     EVT_PREFS_CHANGED, EVT_UPDATE_PROGRESS, EVT_UPDATE_STATE, EVT_WINDOWS_CHANGED,
 };
 use crate::state::{
-    AppState, BroadcastReason, CharacterProfile, Orientation, OverlayScale, ShortcutBindings,
-    StateSnapshot, WindowEntry,
+    AppState, BroadcastReason, CharacterProfile, DispatchSpeed, Orientation, OverlayScale,
+    ShortcutBindings, StateSnapshot, WindowEntry,
 };
 use crate::windows::focus::focus_window;
 
@@ -24,8 +24,6 @@ use crate::windows::focus::focus_window;
 pub enum CmdError {
     #[error("io: {0}")]
     Io(String),
-    #[error("invalid: {0}")]
-    Invalid(String),
     #[error("updater: {0}")]
     Updater(String),
 }
@@ -62,6 +60,9 @@ fn emit_windows_changed(app: &AppHandle, state: &AppState) {
             windows: state.snapshot_windows(),
         },
     );
+    // Profile changes flip windows between tracked/untracked, so the
+    // "which tracked window is focused" answer may have changed too.
+    crate::windows::watcher::nudge_focus();
 }
 
 fn emit_prefs_changed(app: &AppHandle) {
@@ -196,16 +197,15 @@ pub fn save_overlay_position(
 pub fn save_overlay_size(
     app: AppHandle,
     state: State<'_, AppState>,
-    orientation: String,
+    orientation: Orientation,
     width: u32,
     height: u32,
 ) -> Result<(), CmdError> {
     {
         let mut inner = state.write();
-        match orientation.as_str() {
-            "horizontal" => inner.overlay_sizes.horizontal = Some((width, height)),
-            "vertical" => inner.overlay_sizes.vertical = Some((width, height)),
-            other => return Err(CmdError::Invalid(format!("orientation={other}"))),
+        match orientation {
+            Orientation::Horizontal => inner.overlay_sizes.horizontal = Some((width, height)),
+            Orientation::Vertical => inner.overlay_sizes.vertical = Some((width, height)),
         }
     }
     persist(&app, &state)?;
@@ -300,32 +300,44 @@ pub fn set_profile_order(
 pub fn set_orientation(
     app: AppHandle,
     state: State<'_, AppState>,
-    orientation: String,
+    orientation: Orientation,
 ) -> Result<(), CmdError> {
-    let parsed = match orientation.as_str() {
-        "horizontal" => Orientation::Horizontal,
-        "vertical" => Orientation::Vertical,
-        other => return Err(CmdError::Invalid(format!("orientation={other}"))),
-    };
-    state.write().orientation = parsed;
+    state.write().orientation = orientation;
     persist(&app, &state)?;
     emit_prefs_changed(&app);
     Ok(())
 }
 
 #[tauri::command]
+pub fn set_dispatch_speed(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    speed: DispatchSpeed,
+) -> Result<(), CmdError> {
+    state.write().dispatch_speed = speed;
+    persist(&app, &state)?;
+    emit_prefs_changed(&app);
+    Ok(())
+}
+
+/// Tile or stack every tracked Dofus window on the monitor hosting the
+/// first one. Returns how many windows were moved.
+#[tauri::command]
+pub fn organize_windows(
+    state: State<'_, AppState>,
+    layout: crate::windows::organize::Layout,
+) -> Result<usize, CmdError> {
+    let hwnds = state.ordered_visible_hwnds();
+    Ok(crate::windows::organize::organize(&hwnds, layout))
+}
+
+#[tauri::command]
 pub fn set_overlay_scale(
     app: AppHandle,
     state: State<'_, AppState>,
-    scale: String,
+    scale: OverlayScale,
 ) -> Result<(), CmdError> {
-    let parsed = match scale.as_str() {
-        "small" => OverlayScale::Small,
-        "medium" => OverlayScale::Medium,
-        "large" => OverlayScale::Large,
-        other => return Err(CmdError::Invalid(format!("scale={other}"))),
-    };
-    state.write().overlay_scale = parsed;
+    state.write().overlay_scale = scale;
     persist(&app, &state)?;
     emit_prefs_changed(&app);
     Ok(())

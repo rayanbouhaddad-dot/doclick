@@ -23,17 +23,22 @@ pub unsafe extern "system" fn ll_kbd_proc(
         let msg = w_param.0 as u32;
         if (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN) && !is_dispatching() {
             if let Some(app_state) = state() {
+                // Single read-lock snapshot — LL hooks have a system-wide
+                // timeout (~300ms); keep the callback fast and lock-light.
+                let known = {
+                    let inner = app_state.read();
+                    if inner.broadcast_enabled && inner.broadcast_keys_enabled {
+                        inner.tracked_hwnds()
+                    } else {
+                        Vec::new()
+                    }
+                };
                 // Modifier combos (Ctrl/Alt/Win+X) keep their app-local meaning —
                 // broadcasting Ctrl+C would replicate "copy" across every window.
-                let should_broadcast = {
-                    let inner = app_state.read();
-                    inner.broadcast_enabled && inner.broadcast_keys_enabled && !modifiers_held()
-                };
-                if should_broadcast {
-                    let info = &*(l_param.0 as *const KBDLLHOOKSTRUCT);
-                    let vk = info.vkCode;
+                if !known.is_empty() && !modifiers_held() {
+                    let vk = (*(l_param.0 as *const KBDLLHOOKSTRUCT)).vkCode;
                     let fg = current_foreground();
-                    if app_state.all_hwnds().contains(&fg) {
+                    if known.contains(&fg) {
                         let _ = try_enqueue(BroadcastJob::Key {
                             source_hwnd: fg,
                             vk,
