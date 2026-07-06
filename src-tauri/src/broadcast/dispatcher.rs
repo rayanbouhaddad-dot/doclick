@@ -29,7 +29,7 @@ const CLICK_DOWN_UP_GAP: Duration = Duration::from_millis(20);
 /// Hold the follower foreground after sending input so its message pump can
 /// ingest the click before we steal focus to the next target. Roughly 2-3
 /// frames at 30 FPS — Dofus dips below that during loading screens.
-const POST_SEND_HOLD: Duration = Duration::from_millis(80);
+const POST_SEND_HOLD: Duration = Duration::from_millis(200);
 /// Times we re-check the foreground after `focus_with_retries` succeeds and
 /// re-focus on drift. Single-shot recovery isn't enough: the FG can re-drift
 /// in the microseconds between recovery and SendInput.
